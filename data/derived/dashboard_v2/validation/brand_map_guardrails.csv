@@ -1,0 +1,2 @@
+rule,source,month_start,entity_name,mapped_brand,status,details
+all,,,,,ok,No brand-map guardrail violations found.

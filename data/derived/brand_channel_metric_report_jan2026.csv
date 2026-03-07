@@ -1,0 +1,65 @@
+MetricType,Brand,Channel,Source Value,Shopify Value
+Spends,Hearty,Meta,498612.79000000004,
+Orders,Hearty,Meta,847.0,191.0
+Revenue,Hearty,Meta,3474559.3118683603,267226.85
+ROAS,Hearty,Meta,6.9684520364356475,0.535940624387112
+Spends,Meowsi,Meta,297693.48,
+Orders,Meowsi,Meta,0.0,209.0
+Revenue,Meowsi,Meta,1378281.81455412,88018.33
+ROAS,Meowsi,Meta,4.629869,0.2956676444509299
+Spends,NutriMeow,Meta,60645.51,
+Orders,NutriMeow,Meta,92.0,28.0
+Revenue,NutriMeow,Meta,170076.81535542,13553.289999999999
+ROAS,NutriMeow,Meta,2.804442,0.22348381603188758
+Spends,Sara's,Meta,825531.46,
+Orders,Sara's,Meta,70.0,239.0
+Revenue,Sara's,Meta,4243359.45189612,203397.01
+ROAS,Sara's,Meta,5.140154745763559,0.24638311179564254
+Spends,Treats Portfolio,Meta,442062.01999999996,
+Orders,Treats Portfolio,Meta,1026.0,124.0
+Revenue,Treats Portfolio,Meta,2174306.98118864,110227.6
+ROAS,Treats Portfolio,Meta,4.918556407964295,0.2493487226068415
+Spends,YIMT,Meta,167681.44,
+Orders,YIMT,Meta,220.0,188.0
+Revenue,YIMT,Meta,127747.09897536,96681.33
+ROAS,YIMT,Meta,0.761844,0.5765774077321855
+Spends,Yakies,Meta,216278.12,
+Orders,Yakies,Meta,721.0,667.0
+Revenue,Yakies,Meta,264711.65847092,228477.76
+ROAS,Yakies,Meta,1.223941,1.056407185340801
+Spends,Yum Num,Meta,0.0,
+Orders,Yum Num,Meta,0.0,0.0
+Revenue,Yum Num,Meta,0.0,0.0
+ROAS,Yum Num,Meta,,
+Spends,Hearty,Google,91200.19,
+Orders,Hearty,Google,60.760000000000005,64.0
+Revenue,Hearty,Google,166211.02000000002,164949.87
+ROAS,Hearty,Google,1.822485457541262,1.8086570872275594
+Spends,Meowsi,Google,60839.59,
+Orders,Meowsi,Google,43.33,20.0
+Revenue,Meowsi,Google,67414.07,21376.97
+ROAS,Meowsi,Google,1.1080625296784545,0.35136610881171293
+Spends,NutriMeow,Google,30428.85,
+Orders,NutriMeow,Google,26.41,33.0
+Revenue,NutriMeow,Google,50405.1,64071.29
+ROAS,NutriMeow,Google,1.65649046874923,2.105609972115279
+Spends,Sara's,Google,236296.86000000002,
+Orders,Sara's,Google,371.1,380.0
+Revenue,Sara's,Google,839573.69,802433.23
+ROAS,Sara's,Google,3.5530463248644093,3.395869204525189
+Spends,Treats Portfolio,Google,375706.98,
+Orders,Treats Portfolio,Google,578.67,582.0
+Revenue,Treats Portfolio,Google,964654.2,928660.67
+ROAS,Treats Portfolio,Google,2.5675706104794753,2.471768477657775
+Spends,YIMT,Google,0.0,
+Orders,YIMT,Google,0.0,0.0
+Revenue,YIMT,Google,0.0,0.0
+ROAS,YIMT,Google,,
+Spends,Yakies,Google,0.0,
+Orders,Yakies,Google,0.0,0.0
+Revenue,Yakies,Google,0.0,0.0
+ROAS,Yakies,Google,,
+Spends,Yum Num,Google,0.0,
+Orders,Yum Num,Google,0.0,0.0
+Revenue,Yum Num,Google,0.0,0.0
+ROAS,Yum Num,Google,,

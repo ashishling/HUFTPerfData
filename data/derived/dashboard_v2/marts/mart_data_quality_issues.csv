@@ -1,0 +1,4 @@
+issue_type,source_group,month_start,severity,details
+missing_source_month,meta_instamart,2025-12,high,Expected month-wise extract not received.
+awaited_file,meta_instamart,2025-12,high,Please share month-wise extract for this source and month.
+awaited_file,saras_total_revenue_by_channel,2025-12_to_2026-02,high,"Share monthly file for Dec 2025, Jan 2026, Feb 2026 (CSV preferred)."

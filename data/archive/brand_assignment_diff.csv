@@ -1,0 +1,25 @@
+platform,campaign,brand,spend_inr,priority
+meta,DTC_Hearty_Conv_Manual,Hearty,246823.75,100
+meta,DTC_Hearty_3PAud_Sales,Hearty,131595.42,100
+meta,DTC_Hearty_ASC_Catalogue_Oct1,Hearty,120193.62,100
+meta,DTC_Meowsi_Conv,Meowsi,297693.48,100
+meta,DTC_NutriMeow_Conv,NutriMeow,60645.51,100
+meta,DTC_Sara_Conv_PP_Jun23 Campaign,Sara's,49535.62,80
+meta,DTC_Sara.Treats_Conv_May'24,Treats Portfolio,437618.98,200
+meta,DTC_CatTreats_Conv,Treats Portfolio,4443.04,200
+meta,DTC_YIMT_Conv_PP,YIMT,167681.44,100
+meta,DTC_Yakies_Manual,Yakies,216278.12,100
+google,Search_Dog_Food_Hearty,Hearty,60800.11,100
+google,Pmax_Hearty_Dog_Food,Hearty,30400.08,100
+google,PMax_Cat_Food_Meowsi,Meowsi,60839.59,100
+google,Pmax_Nutrimeow_Cat_food,NutriMeow,30428.85,100
+google,Pmax_Sara's_wholesome_New_Customer,Sara's,106314.55,80
+google,Pmax_Dog_Food_Sara's_Wholesome_Food_SWF,Sara's,80709.24,80
+google,Search_Dog_Food_Sara_Wholesome_Food,Sara's,49273.07,80
+google,Search_Dog_HUFT Treats_And_Sara's,Treats Portfolio,131033.54,200
+google,Pmax_Dog_Treat_Sara's_and_HUFT treat,Treats Portfolio,116950.13,200
+google,PMax_HUFT treats_Biscuits,Treats Portfolio,42951.04,200
+google,Search_Dog_HUFT treats_Biscuits,Treats Portfolio,39116.43,200
+google,Pmax_Cat_Treats_Other,Treats Portfolio,15255.09,200
+google,Pmax_Dog_Treats_Other,Treats Portfolio,15200.65,200
+google,Search_Cat_Food_Treat_Meowsi,Treats Portfolio,15200.1,200

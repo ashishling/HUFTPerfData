@@ -1,0 +1,5 @@
+Ad set name,Results,Result indicator,Cost per results,Ad set budget,Ad set budget type,Amount spent (INR),Impressions,Reach,Frequency,"CPM (cost per 1,000 impressions) (INR)",Purchases,Attribution setting,Purchase ROAS (return on ad spend),Results ROAS,Results value
+DTC_Hearty_Conv_DogHealth,208,actions:offsite_conversion.fb_pixel_purchase,580.9792789,2500,Daily,120843.69,713089,283898,2.511779,169.465088,209,7-day click or 1-day view,3.847446,3.78819912,457779.96
+DTC_Hearty_NewNonFoodAud,310,actions:offsite_conversion.fb_pixel_purchase,406.3872903,4000,Daily,125980.06,984791,396471,2.483892,127.925682,310,"7-day click, 1-day view or 1-day engaged view",6.576099,6.57609871,828457.31
+DTC_Hearty_ThirdPartyRCFarmOrAcana,270,actions:offsite_conversion.fb_pixel_purchase,487.3904444,4000,Daily,131595.42,619136,133777,4.62812,212.546872,270,"7-day click, 1-day view or 1-day engaged view",5.002163,5.00216284,658261.72
+DTC_Hearty_ASC_Cat_3P,577,actions:purchase,208.3078336,4000,Daily,120193.62,1250086,152193,8.213821,96.148281,577,"7-day click, 1-day view or 1-day engaged view",12.670395,12.67039507,1522900.65

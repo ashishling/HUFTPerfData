@@ -1,0 +1,1743 @@
+<html><head><meta charset='utf-8'><title>Saras Dashboard V1</title>
+
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; margin: 24px; color: #1f2937; }
+h1 { margin-bottom: 8px; }
+h2 { margin-top: 28px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+.meta { color: #4b5563; margin-bottom: 18px; }
+.tbl { border-collapse: collapse; width: 100%; margin-bottom: 16px; font-size: 12px; }
+.tbl th, .tbl td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }
+.tbl th { background: #f3f4f6; position: sticky; top: 0; cursor: pointer; user-select: none; }
+.toc a { margin-right: 14px; font-size: 13px; }
+.warn { background: #fff7ed; border: 1px solid #fed7aa; padding: 10px; margin-bottom: 14px; }
+.tbl .filter-row th { background: #f9fafb; cursor: default; }
+.tbl .filter-row input { width: 95%; font-size: 11px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; }
+.sort-ind { color: #6b7280; font-size: 10px; margin-left: 4px; }
+.tbl tr.selected-row { background: #ecfeff; }
+.selection-summary { font-size: 12px; color: #374151; margin: -8px 0 16px 0; }
+.selection-summary code { background: #f3f4f6; padding: 1px 4px; border-radius: 4px; margin-right: 8px; }
+.table-tools { margin: 6px 0 8px 0; }
+.table-tools button { font-size: 12px; padding: 6px 10px; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; cursor: pointer; }
+.table-tools button:hover { background: #f9fafb; }
+</style>
+
+
+<script>
+function normalizeValue(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).trim();
+}
+
+function csvEscape(v) {
+  const s = normalizeValue(v);
+  if (s.includes('"') || s.includes(',') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function parseSortable(v) {
+  const s = normalizeValue(v).replace(/,/g, '');
+  if (s === '' || s.toLowerCase() === 'nan') return { type: 'text', value: '' };
+  const n = Number(s);
+  if (!Number.isNaN(n)) return { type: 'number', value: n };
+  const d = Date.parse(s);
+  if (!Number.isNaN(d)) return { type: 'date', value: d };
+  return { type: 'text', value: s.toLowerCase() };
+}
+
+function applyFilters(table) {
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const filters = Array.from(table.querySelectorAll('thead tr.filter-row input')).map(i => i.value.toLowerCase().trim());
+
+  rows.forEach(row => {
+    const cells = Array.from(row.children);
+    let visible = true;
+    filters.forEach((f, idx) => {
+      if (!f) return;
+      // +1 offset because column 0 is the selection checkbox.
+      const val = normalizeValue(cells[idx + 1] ? cells[idx + 1].innerText : '').toLowerCase();
+      if (!val.includes(f)) visible = false;
+    });
+    row.style.display = visible ? '' : 'none';
+  });
+}
+
+function sortTable(table, colIndex) {
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  const currentCol = table.dataset.sortCol ? Number(table.dataset.sortCol) : -1;
+  const currentDir = table.dataset.sortDir || 'asc';
+  const nextDir = (currentCol === colIndex && currentDir === 'asc') ? 'desc' : 'asc';
+  table.dataset.sortCol = colIndex;
+  table.dataset.sortDir = nextDir;
+
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort((a, b) => {
+    const av = parseSortable(a.children[colIndex] ? a.children[colIndex].innerText : '');
+    const bv = parseSortable(b.children[colIndex] ? b.children[colIndex].innerText : '');
+    let cmp = 0;
+    if (av.type === bv.type) {
+      if (av.value < bv.value) cmp = -1;
+      else if (av.value > bv.value) cmp = 1;
+    } else {
+      const as = normalizeValue(a.children[colIndex] ? a.children[colIndex].innerText : '').toLowerCase();
+      const bs = normalizeValue(b.children[colIndex] ? b.children[colIndex].innerText : '').toLowerCase();
+      if (as < bs) cmp = -1;
+      else if (as > bs) cmp = 1;
+    }
+    return nextDir === 'asc' ? cmp : -cmp;
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+
+  const headers = table.querySelectorAll('thead tr:first-child th');
+  headers.forEach((h, idx) => {
+    const base = h.dataset.baseText || h.innerText.replace(/[▲▼]\s*$/, '').trim();
+    h.dataset.baseText = base;
+    if (idx === colIndex) h.innerHTML = base + ' <span class="sort-ind">' + (nextDir === 'asc' ? '▲' : '▼') + '</span>';
+    else h.innerHTML = base;
+  });
+}
+
+function makeTablesInteractive() {
+  const tables = document.querySelectorAll('table.interactive');
+  tables.forEach(table => {
+    const thead = table.querySelector('thead');
+    const headerRow = thead ? thead.querySelector('tr') : null;
+    if (!thead || !headerRow) return;
+
+    // Add selection column header.
+    const selectTh = document.createElement('th');
+    selectTh.innerText = 'Select';
+    selectTh.style.cursor = 'default';
+    headerRow.insertBefore(selectTh, headerRow.firstChild);
+
+    // Add filter row
+    const filterRow = document.createElement('tr');
+    filterRow.className = 'filter-row';
+    const emptyFilter = document.createElement('th');
+    filterRow.appendChild(emptyFilter);
+    Array.from(headerRow.children).forEach((th, colIdx) => {
+      if (colIdx === 0) return;
+      const fth = document.createElement('th');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Filter';
+      input.addEventListener('input', () => applyFilters(table));
+      fth.appendChild(input);
+      filterRow.appendChild(fth);
+
+      th.addEventListener('click', () => sortTable(table, colIdx));
+      th.title = 'Click to sort';
+    });
+    thead.appendChild(filterRow);
+
+    // Add selection checkbox per row.
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    Array.from(tbody.querySelectorAll('tr')).forEach(row => {
+      const td = document.createElement('td');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'row-select';
+      cb.addEventListener('change', () => updateSelectionSummary(table));
+      td.appendChild(cb);
+      row.insertBefore(td, row.firstChild);
+      row.addEventListener('click', (ev) => {
+        if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'A')) return;
+        cb.checked = !cb.checked;
+        updateSelectionSummary(table);
+      });
+    });
+
+    // Add summary node after table.
+    const summary = document.createElement('div');
+    summary.className = 'selection-summary';
+    summary.innerText = 'Selected rows: 0';
+    table.parentNode.insertBefore(summary, table.nextSibling);
+    updateSelectionSummary(table);
+  });
+}
+
+function updateSelectionSummary(table) {
+  const rows = Array.from(table.querySelectorAll('tbody tr'));
+  const selected = rows.filter(r => {
+    const cb = r.querySelector('input.row-select');
+    return cb && cb.checked;
+  });
+
+  rows.forEach(r => r.classList.toggle('selected-row', selected.includes(r)));
+
+  const headerCells = Array.from(table.querySelectorAll('thead tr:first-child th'))
+    .map(h => (h.dataset.baseText || h.innerText || '').replace(/[▲▼]\s*$/, '').trim());
+
+  // Compute sums for numeric columns (excluding select column at index 0).
+  const sums = {};
+  for (let col = 1; col < headerCells.length; col++) {
+    let hasNumeric = false;
+    let s = 0;
+    selected.forEach(r => {
+      const cell = r.children[col];
+      const parsed = parseSortable(cell ? cell.innerText : '');
+      if (parsed.type === 'number') {
+        hasNumeric = true;
+        s += parsed.value;
+      }
+    });
+    if (hasNumeric) sums[headerCells[col]] = s;
+  }
+
+  let summaryText = 'Selected rows: ' + selected.length;
+  const parts = Object.keys(sums).map(k => '<code>' + k + ' sum: ' + sums[k].toFixed(2) + '</code>');
+  if (parts.length > 0) summaryText += ' | ' + parts.join(' ');
+
+  const summaryNode = table.nextElementSibling && table.nextElementSibling.classList.contains('selection-summary')
+    ? table.nextElementSibling
+    : null;
+  if (summaryNode) summaryNode.innerHTML = summaryText;
+}
+
+function downloadTableCsv(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+
+  const headerTh = Array.from(table.querySelectorAll('thead tr:first-child th'));
+  // Exclude the leading "Select" column.
+  const headers = headerTh.slice(1).map(th => (th.dataset.baseText || th.innerText || '').replace(/[▲▼]\s*$/, '').trim());
+
+  const rows = Array.from(table.querySelectorAll('tbody tr'))
+    .filter(r => r.style.display !== 'none')
+    .map(r => Array.from(r.children).slice(1).map(td => td.innerText));
+
+  const lines = [];
+  lines.push(headers.map(csvEscape).join(','));
+  rows.forEach(r => lines.push(r.map(csvEscape).join(',')));
+
+  const csv = lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
+  a.href = url;
+  a.download = tableId + '_' + ts + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+window.addEventListener('DOMContentLoaded', makeTablesInteractive);
+</script>
+
+</head><body>
+<h1>Saras Performance Dashboard V1</h1>
+<div class='meta'>Built from current available data (Dec 2025 - Feb 2026). This is a P0 working version with explicit data gaps.</div>
+<div class='toc'><a href='#tab1'>Tab 1: Executive Summary</a><a href='#tab2'>Tab 2: Conversion</a><a href='#tab3'>Tab 3: Demand Capture</a><a href='#tab4'>Tab 4: Demand Generation</a><a href='#tab5'>Tab 5: Reconciliation & Data Quality</a><a href='#tab6'>Tab 6: Campaign Mapping</a></div>
+<div class='warn'><b>Known gaps:</b> MER cannot be computed until Saras total channel revenue arrives. Meta-Shopify Jan 2026 is pending validation/re-export. Instamart Dec 2025 is missing.</div>
+<h2 id='tab1'>Tab 1 - Executive Summary</h2>
+<h3>Brand Monthly Summary</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab1_brand_monthly_summary')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab1_brand_monthly_summary">
+  <thead>
+    <tr style="text-align: right;">
+      <th>month_start</th>
+      <th>brand</th>
+      <th>paid_spend</th>
+      <th>paid_revenue_paid_attribution</th>
+      <th>paid_revenue_shopify_attribution</th>
+      <th>paid_roas_platform</th>
+      <th>paid_roas_shopify</th>
+      <th>total_revenue_all_channels</th>
+      <th>mer</th>
+      <th>status_notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025-12</td>
+      <td>saras</td>
+      <td>2048142.03</td>
+      <td>6968972.66</td>
+      <td>1535647.09</td>
+      <td>3.40</td>
+      <td>0.75</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>Pending Saras total revenue by channel file.</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>saras</td>
+      <td>1597026.15</td>
+      <td>5873322.33</td>
+      <td>998267.86</td>
+      <td>3.68</td>
+      <td>0.63</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>Pending Saras total revenue by channel file.</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>saras</td>
+      <td>1574377.44</td>
+      <td>5446995.44</td>
+      <td>989766.16</td>
+      <td>3.46</td>
+      <td>0.63</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>Pending Saras total revenue by channel file.</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Channel Spend Mix (%)</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab1_channel_spend_mix')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab1_channel_spend_mix">
+  <thead>
+    <tr style="text-align: right;">
+      <th>month_start</th>
+      <th>channel</th>
+      <th>spend</th>
+      <th>month_spend_total</th>
+      <th>channel_spend_pct</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025-12</td>
+      <td>blinkit_cpass</td>
+      <td>229991.83</td>
+      <td>2048142.03</td>
+      <td>11.23</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>408498.63</td>
+      <td>2048142.03</td>
+      <td>19.94</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>meta</td>
+      <td>1409651.57</td>
+      <td>2048142.03</td>
+      <td>68.83</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>blinkit_cpass</td>
+      <td>435263.73</td>
+      <td>1597026.15</td>
+      <td>27.25</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>236296.86</td>
+      <td>1597026.15</td>
+      <td>14.80</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>instamart_cpass</td>
+      <td>149469.72</td>
+      <td>1597026.15</td>
+      <td>9.36</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>meta</td>
+      <td>775995.84</td>
+      <td>1597026.15</td>
+      <td>48.59</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>blinkit_cpass</td>
+      <td>308218.79</td>
+      <td>1574377.44</td>
+      <td>19.58</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>355429.41</td>
+      <td>1574377.44</td>
+      <td>22.58</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>instamart_cpass</td>
+      <td>131435.67</td>
+      <td>1574377.44</td>
+      <td>8.35</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>meta</td>
+      <td>779293.57</td>
+      <td>1574377.44</td>
+      <td>49.50</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id='tab2'>Tab 2 - Conversion Performance</h2>
+<h3>Conversion Insights by Channel (Leadership View)</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab2_conversion_insights')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab2_conversion_insights">
+  <thead>
+    <tr style="text-align: right;">
+      <th>month_start</th>
+      <th>channel</th>
+      <th>paid_spend</th>
+      <th>orders_platform</th>
+      <th>cpa_platform</th>
+      <th>revenue_paid_attribution</th>
+      <th>revenue_shopify_attribution</th>
+      <th>roas_paid_attribution</th>
+      <th>roas_shopify_attribution</th>
+      <th>revenue_gap_paid_vs_shopify</th>
+      <th>roas_paid_over_shopify</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025-12</td>
+      <td>blinkit_cpass</td>
+      <td>229991.83</td>
+      <td>2033.00</td>
+      <td>113.13</td>
+      <td>683116.00</td>
+      <td>NaN</td>
+      <td>2.97</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>408498.63</td>
+      <td>501.12</td>
+      <td>815.17</td>
+      <td>1148756.95</td>
+      <td>1241285.08</td>
+      <td>2.81</td>
+      <td>3.04</td>
+      <td>-92528.13</td>
+      <td>0.93</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>meta</td>
+      <td>1409651.57</td>
+      <td>2259.00</td>
+      <td>624.02</td>
+      <td>5137099.71</td>
+      <td>294362.01</td>
+      <td>3.64</td>
+      <td>0.21</td>
+      <td>4842737.70</td>
+      <td>17.45</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>blinkit_cpass</td>
+      <td>435263.73</td>
+      <td>2517.00</td>
+      <td>172.93</td>
+      <td>724785.00</td>
+      <td>NaN</td>
+      <td>1.67</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>236296.86</td>
+      <td>371.11</td>
+      <td>636.73</td>
+      <td>839583.53</td>
+      <td>802433.23</td>
+      <td>3.55</td>
+      <td>3.40</td>
+      <td>37150.30</td>
+      <td>1.05</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>instamart_cpass</td>
+      <td>149469.72</td>
+      <td>580.00</td>
+      <td>257.71</td>
+      <td>189585.00</td>
+      <td>NaN</td>
+      <td>1.27</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>meta</td>
+      <td>775995.84</td>
+      <td>1881.00</td>
+      <td>412.54</td>
+      <td>4119368.80</td>
+      <td>195834.63</td>
+      <td>5.31</td>
+      <td>0.25</td>
+      <td>3923534.17</td>
+      <td>21.03</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>blinkit_cpass</td>
+      <td>308218.79</td>
+      <td>3276.00</td>
+      <td>94.08</td>
+      <td>978803.00</td>
+      <td>NaN</td>
+      <td>3.18</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>355429.41</td>
+      <td>328.59</td>
+      <td>1081.68</td>
+      <td>787081.33</td>
+      <td>754449.99</td>
+      <td>2.21</td>
+      <td>2.12</td>
+      <td>32631.34</td>
+      <td>1.04</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>instamart_cpass</td>
+      <td>131435.67</td>
+      <td>613.00</td>
+      <td>214.41</td>
+      <td>206108.00</td>
+      <td>NaN</td>
+      <td>1.57</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>meta</td>
+      <td>779293.57</td>
+      <td>1655.00</td>
+      <td>470.87</td>
+      <td>3475003.11</td>
+      <td>235316.17</td>
+      <td>4.46</td>
+      <td>0.30</td>
+      <td>3239686.94</td>
+      <td>14.77</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Google Campaign-Level Conversion Insights (Double-Click)</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab2_google_campaign_insights')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab2_google_campaign_insights">
+  <thead>
+    <tr style="text-align: right;">
+      <th>month_start</th>
+      <th>campaign_name</th>
+      <th>campaign_type</th>
+      <th>paid_spend</th>
+      <th>orders_platform</th>
+      <th>cpa_platform</th>
+      <th>revenue_paid_attribution</th>
+      <th>revenue_shopify_attribution</th>
+      <th>roas_paid_attribution</th>
+      <th>roas_shopify_attribution</th>
+      <th>revenue_gap_paid_vs_shopify</th>
+      <th>roas_paid_over_shopify</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025-12</td>
+      <td>Pmax_Dog_Food_Sara's_Wholesome_Food_SWF</td>
+      <td>Performance Max</td>
+      <td>171166.65</td>
+      <td>116.39</td>
+      <td>1470.63</td>
+      <td>290684.03</td>
+      <td>252142.19</td>
+      <td>1.70</td>
+      <td>1.47</td>
+      <td>38541.84</td>
+      <td>1.15</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>Pmax_Sara's_wholesome_New_Customer</td>
+      <td>Performance Max</td>
+      <td>142210.33</td>
+      <td>321.65</td>
+      <td>442.13</td>
+      <td>709922.79</td>
+      <td>818572.64</td>
+      <td>4.99</td>
+      <td>5.76</td>
+      <td>-108649.85</td>
+      <td>0.87</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>Search_Dog_Food_Sara_Wholesome_Food</td>
+      <td>Search</td>
+      <td>95121.65</td>
+      <td>63.08</td>
+      <td>1507.95</td>
+      <td>148150.13</td>
+      <td>170570.25</td>
+      <td>1.56</td>
+      <td>1.79</td>
+      <td>-22420.12</td>
+      <td>0.87</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>Pmax_Sara's_wholesome_New_Customer</td>
+      <td>Performance Max</td>
+      <td>106314.55</td>
+      <td>273.23</td>
+      <td>389.10</td>
+      <td>637281.37</td>
+      <td>618286.97</td>
+      <td>5.99</td>
+      <td>5.82</td>
+      <td>18994.40</td>
+      <td>1.03</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>Pmax_Dog_Food_Sara's_Wholesome_Food_SWF</td>
+      <td>Performance Max</td>
+      <td>80709.24</td>
+      <td>61.74</td>
+      <td>1307.24</td>
+      <td>138647.42</td>
+      <td>118388.24</td>
+      <td>1.72</td>
+      <td>1.47</td>
+      <td>20259.18</td>
+      <td>1.17</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>Search_Dog_Food_Sara_Wholesome_Food</td>
+      <td>Search</td>
+      <td>49273.07</td>
+      <td>36.14</td>
+      <td>1363.39</td>
+      <td>63654.74</td>
+      <td>65758.02</td>
+      <td>1.29</td>
+      <td>1.33</td>
+      <td>-2103.28</td>
+      <td>0.97</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>Pmax_Sara's_wholesome_New_Customer</td>
+      <td>Performance Max</td>
+      <td>142447.23</td>
+      <td>203.78</td>
+      <td>699.02</td>
+      <td>564655.77</td>
+      <td>521241.02</td>
+      <td>3.96</td>
+      <td>3.66</td>
+      <td>43414.75</td>
+      <td>1.08</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>Pmax_Dog_Food_Sara's_Wholesome_Food_SWF</td>
+      <td>Performance Max</td>
+      <td>140371.12</td>
+      <td>75.13</td>
+      <td>1868.38</td>
+      <td>121615.73</td>
+      <td>99868.90</td>
+      <td>0.87</td>
+      <td>0.71</td>
+      <td>21746.83</td>
+      <td>1.22</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>Search_Dog_Food_Sara_Wholesome_Food</td>
+      <td>Search</td>
+      <td>72611.06</td>
+      <td>49.68</td>
+      <td>1461.58</td>
+      <td>100809.83</td>
+      <td>133340.07</td>
+      <td>1.39</td>
+      <td>1.84</td>
+      <td>-32530.24</td>
+      <td>0.76</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Meta Campaign-Level Conversion Insights (Double-Click)</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab2_meta_campaign_insights')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab2_meta_campaign_insights">
+  <thead>
+    <tr style="text-align: right;">
+      <th>month_start</th>
+      <th>campaign_name</th>
+      <th>attribution_setting</th>
+      <th>paid_spend</th>
+      <th>orders_platform</th>
+      <th>cpa_platform</th>
+      <th>revenue_paid_attribution</th>
+      <th>revenue_shopify_attribution</th>
+      <th>roas_paid_attribution</th>
+      <th>roas_shopify_attribution</th>
+      <th>revenue_gap_paid_vs_shopify</th>
+      <th>roas_paid_over_shopify</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025-12</td>
+      <td>DTC_SWF_IndiaDogProducts</td>
+      <td>7-day click or 1-day view</td>
+      <td>473367.26</td>
+      <td>935</td>
+      <td>506.28</td>
+      <td>2207305.80</td>
+      <td>&lt;NA&gt;</td>
+      <td>4.66</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>DTC_SWF_Conv_478cities</td>
+      <td>7-day click or 1-day view</td>
+      <td>360907.53</td>
+      <td>460</td>
+      <td>784.58</td>
+      <td>908622.19</td>
+      <td>&lt;NA&gt;</td>
+      <td>2.52</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>DTC_SWF_Conv_TopSWFCities</td>
+      <td>7-day click or 1-day view</td>
+      <td>282431.54</td>
+      <td>328</td>
+      <td>861.07</td>
+      <td>653626.55</td>
+      <td>&lt;NA&gt;</td>
+      <td>2.31</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>DTC_SWF_IG-LA2</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>168346.73</td>
+      <td>292</td>
+      <td>576.53</td>
+      <td>760359.39</td>
+      <td>&lt;NA&gt;</td>
+      <td>4.52</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>DTC_SWF_Metros_BrandFilm</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>107802.46</td>
+      <td>239</td>
+      <td>451.06</td>
+      <td>597852.82</td>
+      <td>&lt;NA&gt;</td>
+      <td>5.55</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>DTC_SWF_Punjab</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>16796.05</td>
+      <td>5</td>
+      <td>3359.21</td>
+      <td>9332.96</td>
+      <td>&lt;NA&gt;</td>
+      <td>0.56</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>DTC_SWF_IndiaDogProducts</td>
+      <td>7-day click or 1-day view</td>
+      <td>231338.04</td>
+      <td>540</td>
+      <td>428.40</td>
+      <td>1213028.82</td>
+      <td>&lt;NA&gt;</td>
+      <td>5.24</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>DTC_SWF_Metros_BrandFilm</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>161010.82</td>
+      <td>564</td>
+      <td>285.48</td>
+      <td>1274038.52</td>
+      <td>&lt;NA&gt;</td>
+      <td>7.91</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>DTC_SWF_Conv_478cities</td>
+      <td>7-day click or 1-day view</td>
+      <td>158350.85</td>
+      <td>365</td>
+      <td>433.84</td>
+      <td>870749.92</td>
+      <td>&lt;NA&gt;</td>
+      <td>5.50</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>DTC_SWF_IG-LA2</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>138605.06</td>
+      <td>287</td>
+      <td>482.94</td>
+      <td>567394.82</td>
+      <td>&lt;NA&gt;</td>
+      <td>4.09</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>DTC_SWF_Conv_TopSWFCities</td>
+      <td>7-day click or 1-day view</td>
+      <td>86691.07</td>
+      <td>125</td>
+      <td>693.53</td>
+      <td>194156.72</td>
+      <td>&lt;NA&gt;</td>
+      <td>2.24</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>DTC_SWF_Metros_BrandFilm</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>194227.73</td>
+      <td>612</td>
+      <td>317.37</td>
+      <td>1397801.80</td>
+      <td>&lt;NA&gt;</td>
+      <td>7.20</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>DTC_SWF_IndiaDogProducts</td>
+      <td>7-day click or 1-day view</td>
+      <td>183607.90</td>
+      <td>397</td>
+      <td>462.49</td>
+      <td>895915.63</td>
+      <td>&lt;NA&gt;</td>
+      <td>4.88</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>DTC_SWF_Conv_478cities</td>
+      <td>7-day click or 1-day view</td>
+      <td>150695.35</td>
+      <td>249</td>
+      <td>605.20</td>
+      <td>462058.85</td>
+      <td>&lt;NA&gt;</td>
+      <td>3.07</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>DTC_SWF_IG-LA2</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>131925.91</td>
+      <td>238</td>
+      <td>554.31</td>
+      <td>439079.41</td>
+      <td>&lt;NA&gt;</td>
+      <td>3.33</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>DTC_SWF_Conv_TopSWFCities</td>
+      <td>7-day click or 1-day view</td>
+      <td>118836.68</td>
+      <td>159</td>
+      <td>747.40</td>
+      <td>280147.42</td>
+      <td>&lt;NA&gt;</td>
+      <td>2.36</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id='tab3'>Tab 3 - Demand Capture</h2>
+<h3>Demand Capture Channels</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab3_demand_capture')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab3_demand_capture">
+  <thead>
+    <tr style="text-align: right;">
+      <th>month_start</th>
+      <th>channel</th>
+      <th>paid_spend</th>
+      <th>revenue_paid_attribution</th>
+      <th>revenue_shopify_attribution</th>
+      <th>roas_paid_attribution</th>
+      <th>roas_shopify_attribution</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025-12</td>
+      <td>blinkit_cpass</td>
+      <td>229991.83</td>
+      <td>683116.00</td>
+      <td>NaN</td>
+      <td>2.97</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>408498.63</td>
+      <td>1148756.95</td>
+      <td>1241285.08</td>
+      <td>2.81</td>
+      <td>3.04</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>blinkit_cpass</td>
+      <td>435263.73</td>
+      <td>724785.00</td>
+      <td>NaN</td>
+      <td>1.67</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>236296.86</td>
+      <td>839583.53</td>
+      <td>802433.23</td>
+      <td>3.55</td>
+      <td>3.40</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>instamart_cpass</td>
+      <td>149469.72</td>
+      <td>189585.00</td>
+      <td>NaN</td>
+      <td>1.27</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>blinkit_cpass</td>
+      <td>308218.79</td>
+      <td>978803.00</td>
+      <td>NaN</td>
+      <td>3.18</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>355429.41</td>
+      <td>787081.33</td>
+      <td>754449.99</td>
+      <td>2.21</td>
+      <td>2.12</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>instamart_cpass</td>
+      <td>131435.67</td>
+      <td>206108.00</td>
+      <td>NaN</td>
+      <td>1.57</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id='tab4'>Tab 4 - Demand Generation</h2>
+<h3>Demand Generation Metrics</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab4_demand_generation')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab4_demand_generation">
+  <thead>
+    <tr style="text-align: right;">
+      <th>month_start</th>
+      <th>meta_spend</th>
+      <th>meta_impressions</th>
+      <th>meta_reach</th>
+      <th>Meta_New</th>
+      <th>google_branded_search_volume</th>
+      <th>D2C_New</th>
+      <th>D2C_Repeat</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025-12</td>
+      <td>1409651.57</td>
+      <td>16193131.0</td>
+      <td>6339382.0</td>
+      <td>232.0</td>
+      <td>3250.0</td>
+      <td>7735.0</td>
+      <td>17647.0</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>775995.84</td>
+      <td>11100465.0</td>
+      <td>4023140.0</td>
+      <td>137.0</td>
+      <td>3230.0</td>
+      <td>6165.0</td>
+      <td>15846.0</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>779293.57</td>
+      <td>11946131.0</td>
+      <td>3865727.0</td>
+      <td>209.0</td>
+      <td>NaN</td>
+      <td>4442.0</td>
+      <td>12325.0</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id='tab5'>Tab 5 - Reconciliation and Data Quality</h2>
+<h3>Attribution Reconciliation</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab5_reconciliation')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab5_reconciliation">
+  <thead>
+    <tr style="text-align: right;">
+      <th>month_start</th>
+      <th>brand</th>
+      <th>channel</th>
+      <th>spend_platform</th>
+      <th>revenue_platform</th>
+      <th>revenue_shopify</th>
+      <th>roas_platform</th>
+      <th>roas_shopify</th>
+      <th>revenue_delta</th>
+      <th>roas_delta</th>
+      <th>status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025-12</td>
+      <td>saras</td>
+      <td>google</td>
+      <td>408498.63</td>
+      <td>1148756.95</td>
+      <td>1241285.08</td>
+      <td>2.81</td>
+      <td>3.04</td>
+      <td>-92528.13</td>
+      <td>-0.23</td>
+      <td>ok</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>saras</td>
+      <td>meta</td>
+      <td>1409651.57</td>
+      <td>5137099.71</td>
+      <td>294362.01</td>
+      <td>3.64</td>
+      <td>0.21</td>
+      <td>4842737.70</td>
+      <td>3.44</td>
+      <td>ok</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>saras</td>
+      <td>google</td>
+      <td>236296.86</td>
+      <td>839583.53</td>
+      <td>802433.23</td>
+      <td>3.55</td>
+      <td>3.40</td>
+      <td>37150.30</td>
+      <td>0.16</td>
+      <td>ok</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>saras</td>
+      <td>meta</td>
+      <td>775995.84</td>
+      <td>4119368.80</td>
+      <td>195834.63</td>
+      <td>5.31</td>
+      <td>0.25</td>
+      <td>3923534.17</td>
+      <td>5.06</td>
+      <td>ok</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>saras</td>
+      <td>google</td>
+      <td>355429.41</td>
+      <td>787081.33</td>
+      <td>754449.99</td>
+      <td>2.21</td>
+      <td>2.12</td>
+      <td>32631.34</td>
+      <td>0.09</td>
+      <td>ok</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>saras</td>
+      <td>meta</td>
+      <td>779293.57</td>
+      <td>3475003.11</td>
+      <td>235316.17</td>
+      <td>4.46</td>
+      <td>0.30</td>
+      <td>3239686.94</td>
+      <td>4.16</td>
+      <td>ok</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Data Quality Issues</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab5_data_quality')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab5_data_quality">
+  <thead>
+    <tr style="text-align: right;">
+      <th>issue_type</th>
+      <th>source_group</th>
+      <th>month_start</th>
+      <th>severity</th>
+      <th>details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>missing_source_month</td>
+      <td>meta_instamart</td>
+      <td>2025-12</td>
+      <td>high</td>
+      <td>Expected month-wise extract not received.</td>
+    </tr>
+    <tr>
+      <td>awaited_file</td>
+      <td>meta_instamart</td>
+      <td>2025-12</td>
+      <td>high</td>
+      <td>Please share month-wise extract for this source and month.</td>
+    </tr>
+    <tr>
+      <td>awaited_file</td>
+      <td>saras_total_revenue_by_channel</td>
+      <td>2025-12_to_2026-02</td>
+      <td>high</td>
+      <td>Share monthly file for Dec 2025, Jan 2026, Feb 2026 (CSV preferred).</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id='tab6'>Tab 6 - Campaign to Brand Mapping</h2>
+<h3>Campaign/Ad Set Mapping with Spend</h3><div class='table-tools'><button type='button' onclick="downloadTableCsv('tab6_campaign_mapping')">Download CSV</button></div><table border="1" class="dataframe tbl interactive" id="tab6_campaign_mapping">
+  <thead>
+    <tr style="text-align: right;">
+      <th>month_start</th>
+      <th>platform</th>
+      <th>source</th>
+      <th>campaign_name</th>
+      <th>mapped_brand</th>
+      <th>attribution_setting</th>
+      <th>spend</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Dog_Food_Sara's_Wholesome_Food_SWF</td>
+      <td>Sara's</td>
+      <td></td>
+      <td>171166.65</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Dog_Treat_Sara's_and_HUFT treat</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>154010.29</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Sara's_wholesome_New_Customer</td>
+      <td>Sara's</td>
+      <td></td>
+      <td>142210.33</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>PMax_Cat_Food_Meowsi</td>
+      <td>Meowsi</td>
+      <td></td>
+      <td>104666.79</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_HUFT Treats_And_Sara's</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>98168.59</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_Food_Sara_Wholesome_Food</td>
+      <td>Sara's</td>
+      <td></td>
+      <td>95121.65</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_Food_Hearty</td>
+      <td>Hearty</td>
+      <td></td>
+      <td>84574.16</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Nutrimeow_Cat_food</td>
+      <td>NutriMeow</td>
+      <td></td>
+      <td>73525.50</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Dog_Treats_Other</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>59260.21</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>PMax_HUFT treats_Biscuits</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>50632.26</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Cat_Food_Treat_Meowsi</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>41949.64</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_HUFT treats_Biscuits</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>34771.69</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Hearty_Dog_Food</td>
+      <td>Hearty</td>
+      <td></td>
+      <td>30398.06</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Cat_Treats_Other</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>29806.73</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_IndiaDogProducts</td>
+      <td>Sara's</td>
+      <td>7-day click or 1-day view</td>
+      <td>473367.26</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Conv_478cities</td>
+      <td>Sara's</td>
+      <td>7-day click or 1-day view</td>
+      <td>360907.53</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Conv_TopSWFCities</td>
+      <td>Sara's</td>
+      <td>7-day click or 1-day view</td>
+      <td>282431.54</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_IG-LA2</td>
+      <td>Sara's</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>168346.73</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Metros_BrandFilm</td>
+      <td>Sara's</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>107802.46</td>
+    </tr>
+    <tr>
+      <td>2025-12</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Punjab</td>
+      <td>Sara's</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>16796.05</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_HUFT Treats_And_Sara's</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>131033.54</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Dog_Treat_Sara's_and_HUFT treat</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>116950.13</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Sara's_wholesome_New_Customer</td>
+      <td>Sara's</td>
+      <td></td>
+      <td>106314.55</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Dog_Food_Sara's_Wholesome_Food_SWF</td>
+      <td>Sara's</td>
+      <td></td>
+      <td>80709.24</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>PMax_Cat_Food_Meowsi</td>
+      <td>Meowsi</td>
+      <td></td>
+      <td>60839.59</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_Food_Hearty</td>
+      <td>Hearty</td>
+      <td></td>
+      <td>60800.11</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_Food_Sara_Wholesome_Food</td>
+      <td>Sara's</td>
+      <td></td>
+      <td>49273.07</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>PMax_HUFT treats_Biscuits</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>42951.04</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_HUFT treats_Biscuits</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>39116.43</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Nutrimeow_Cat_food</td>
+      <td>NutriMeow</td>
+      <td></td>
+      <td>30428.85</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Hearty_Dog_Food</td>
+      <td>Hearty</td>
+      <td></td>
+      <td>30400.08</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Cat_Treats_Other</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>15255.09</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Dog_Treats_Other</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>15200.65</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Cat_Food_Treat_Meowsi</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>15200.10</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_IndiaDogProducts</td>
+      <td>Sara's</td>
+      <td>7-day click or 1-day view</td>
+      <td>231338.04</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Metros_BrandFilm</td>
+      <td>Sara's</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>161010.82</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Conv_478cities</td>
+      <td>Sara's</td>
+      <td>7-day click or 1-day view</td>
+      <td>158350.85</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_IG-LA2</td>
+      <td>Sara's</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>138605.06</td>
+    </tr>
+    <tr>
+      <td>2026-01</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Conv_TopSWFCities</td>
+      <td>Sara's</td>
+      <td>7-day click or 1-day view</td>
+      <td>86691.07</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Dog_Treat_Sara's_and_HUFT treat</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>275975.26</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_HUFT Treats_And_Sara's</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>203623.36</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Sara's_wholesome_New_Customer</td>
+      <td>Sara's</td>
+      <td></td>
+      <td>142447.23</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Dog_Food_Sara's_Wholesome_Food_SWF</td>
+      <td>Sara's</td>
+      <td></td>
+      <td>140371.12</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_Food_Sara_Wholesome_Food</td>
+      <td>Sara's</td>
+      <td></td>
+      <td>72611.06</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>PMax_Cat_Food_Meowsi</td>
+      <td>Meowsi</td>
+      <td></td>
+      <td>60772.70</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Nutrimeow_Cat_food</td>
+      <td>NutriMeow</td>
+      <td></td>
+      <td>59056.70</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_Food_Hearty</td>
+      <td>Hearty</td>
+      <td></td>
+      <td>58577.99</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Dog_HUFT treats_Biscuits</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>54799.19</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Hearty_Dog_Food</td>
+      <td>Hearty</td>
+      <td></td>
+      <td>50330.02</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>PMax_HUFT treats_Biscuits</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>49517.74</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Search_Cat_Food_Treat_Meowsi</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>15200.09</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Cat_Treats_Other</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>922.11</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>google</td>
+      <td>google_ads_campaigns_monthly</td>
+      <td>Pmax_Dog_Treats_Other</td>
+      <td>Treats Portfolio</td>
+      <td></td>
+      <td>478.20</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Metros_BrandFilm</td>
+      <td>Sara's</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>194227.73</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_IndiaDogProducts</td>
+      <td>Sara's</td>
+      <td>7-day click or 1-day view</td>
+      <td>183607.90</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Conv_478cities</td>
+      <td>Sara's</td>
+      <td>7-day click or 1-day view</td>
+      <td>150695.35</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_IG-LA2</td>
+      <td>Sara's</td>
+      <td>7-day click, 1-day view or 1-day engaged view</td>
+      <td>131925.91</td>
+    </tr>
+    <tr>
+      <td>2026-02</td>
+      <td>meta</td>
+      <td>meta_d2c_adset_monthly</td>
+      <td>DTC_SWF_Conv_TopSWFCities</td>
+      <td>Sara's</td>
+      <td>7-day click or 1-day view</td>
+      <td>118836.68</td>
+    </tr>
+  </tbody>
+</table>
+</body></html>

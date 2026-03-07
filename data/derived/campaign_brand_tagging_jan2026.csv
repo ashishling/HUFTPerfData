@@ -1,0 +1,79 @@
+source,platform,campaign,spend_inr,brand,matched_pattern,priority,is_brand_specific
+google_platform,google,Search_Dog_HUFT Treats_And_Sara's,131033.54,Treats Portfolio,%treat%,200.0,True
+google_platform,google,Pmax_Dog_Treat_Sara's_and_HUFT treat,116950.13,Treats Portfolio,%treat%,200.0,True
+google_platform,google,Pmax_Sara's_wholesome_New_Customer,106314.55,Sara's,%sara%,80.0,True
+google_platform,google,Pmax_Dog_Food_Sara's_Wholesome_Food_SWF,80709.24,Sara's,%sara%,80.0,True
+google_platform,google,PMax_Cat_Food_Meowsi,60839.59,Meowsi,%meowsi%,100.0,True
+google_platform,google,Search_Dog_Food_Hearty,60800.11,Hearty,%hearty%,100.0,True
+google_platform,google,Search_Dog_Food_Sara_Wholesome_Food,49273.07,Sara's,%sara%,80.0,True
+google_platform,google,PMax_HUFT treats_Biscuits,42951.04,Treats Portfolio,%treat%,200.0,True
+google_platform,google,Search_Dog_HUFT treats_Biscuits,39116.43,Treats Portfolio,%treat%,200.0,True
+google_platform,google,Pmax_Nutrimeow_Cat_food,30428.85,NutriMeow,%nutrimeow%,100.0,True
+google_platform,google,Pmax_Hearty_Dog_Food,30400.08,Hearty,%hearty%,100.0,True
+google_platform,google,Pmax_Cat_Treats_Other,15255.09,Treats Portfolio,%treat%,200.0,True
+google_platform,google,Pmax_Dog_Treats_Other,15200.65,Treats Portfolio,%treat%,200.0,True
+google_platform,google,Search_Cat_Food_Treat_Meowsi,15200.1,Treats Portfolio,%treat%,200.0,True
+google_platform,google,Shopping_Catch_All,816882.83,,,,False
+google_platform,google,Search_Exact_BrandCore,756564.11,,,,False
+google_platform,google,Search_Local Ads_ Store promotion_Bangalore,174632.65,,,,False
+google_platform,google,Pmax_EOSS_Jan_2026,167421.16,,,,False
+google_platform,google,Search_Local Ads_Store promotion_Delhi,135689.42,,,,False
+google_platform,google,Search_Local Ads_ Store promotion_Mumbai,100673.89,,,,False
+google_platform,google,Video_HUFT_Brands_YTB_Awareness_Upper_Funnel,89894.13,,,,False
+google_platform,google,Search_Local Ads_Store promotion_Chennai,76753.48,,,,False
+google_platform,google,HUFT_IOS_App_Install,71664.42,,,,False
+google_platform,google,Search__Farmina_Dog_Food_Cat_Food_Other,63840.21,,,,False
+google_platform,google,PMax_Dog_Food_Cat_Food_Other_Royal_Canin,60813.03,,,,False
+google_platform,google,PMax_Dog_Food_Other_Brands,60804.38,,,,False
+google_platform,google,Search_All_Competitors,60800.47,,,,False
+google_platform,google,Search_Royal_Canin_Dog_Food_Cat_Food,60800.19,,,,False
+google_platform,google,Search_Local_Ahmedabad,58499.24,,,,False
+google_platform,google,Search_Local Ads_ Store promotion_Kolkata,46802.52,,,,False
+google_platform,google,Search_Dog_Winter_Collection,42199.14,,,,False
+google_platform,google,Pmax_Dog_Food_Cat_Food_Other_Orijen,39520.37,,,,False
+google_platform,google,Search_Local Ads_ Store promotion_Pune,36715.84,,,,False
+google_platform,google,Search_Cat_Food_Other_Generic,30442.12,,,,False
+google_platform,google,Search_Dog_Food_Other_Generic,30418.86,,,,False
+google_platform,google,Pmax_Dog_Food_Cat_Food_Other_Farmina,30401.02,,,,False
+google_platform,google,Pmax_Cat_Food_Other_Sheba_Whiskas,30400.6,,,,False
+google_platform,google,Pmax_Dog_Food_Other_Acana,30400.15,,,,False
+google_platform,google,Search_Cat_Food_Other_Whiskas,30400.02,,,,False
+google_platform,google,Search_Cat_Food_Other_Sheba,30263.75,,,,False
+google_platform,google,PMax_Local_Store Promotion_Not_picking,26827.18,,,,False
+google_platform,google,Search_Local Ads_ Store promotion_Coimbatore,24621.66,,,,False
+google_platform,google,Pmax_Local_Store Promotion_Hyderabad,24320.44,,,,False
+google_platform,google,Search_Dog_Food_Other_Pedigree,20135.6,,,,False
+google_platform,google,Search_Local Ads_Store promotion_Mysore,18780.43,,,,False
+google_platform,google,PMax_Local_Store Promotion_Not_picking_Group_2,17295.88,,,,False
+google_platform,google,Pmax_Dog_winter_collection,16037.63,,,,False
+google_platform,google,PMax_Cat_Food_Other,15232.37,,,,False
+google_platform,google,Search_Dog_Collar-Leash-Harness,15200.15,,,,False
+google_platform,google,Search_Local Ads_ Store promotion_Nagpur,14258.4,,,,False
+google_platform,google,HUFT_Android_App_Installs,13988.69,,,,False
+google_platform,google,Search_Local_Store promotion_Chandigarh,12542.56,,,,False
+google_platform,google,Search_Local Ads_ Store promotion_Mohali,12533.87,,,,False
+google_platform,google,Search_Local Ads_Store promotion_Panchkula,12517.91,,,,False
+google_platform,google,Search_Local Ads_ Store promotion_Jaipur,12436.25,,,,False
+google_platform,google,Search_Local Ads_ Store promotion_Surat,12034.85,,,,False
+google_platform,google,PMax_Local_store_visits_Gurgaon,8684.9,,,,False
+google_platform,google,Pmax_Beds_and_Mat,5329.54,,,,False
+google_platform,google,Pmax_Local_Store Promotion_Mumbai,933.99,,,,False
+google_platform,google,Updated_Store_Promotion_Search_Local_Gurgaon,369.0,,,,False
+meta_platform,meta,DTC_SWF_Conv,775995.84,Sara's,%swf%,80.0,True
+meta_platform,meta,DTC_Sara.Treats_Conv_May'24,437618.98,Treats Portfolio,%treat%,200.0,True
+meta_platform,meta,DTC_Meowsi_Conv,297693.48,Meowsi,%meowsi%,100.0,True
+meta_platform,meta,DTC_Hearty_Conv_Manual,246823.75,Hearty,%hearty%,100.0,True
+meta_platform,meta,DTC_Yakies_Manual,216278.12,Yakies,%yakies%,100.0,True
+meta_platform,meta,DTC_YIMT_Conv_PP,167681.44,YIMT,%yimt%,100.0,True
+meta_platform,meta,DTC_Hearty_3PAud_Sales,131595.42,Hearty,%hearty%,100.0,True
+meta_platform,meta,DTC_Hearty_ASC_Catalogue_Oct1,120193.62,Hearty,%hearty%,100.0,True
+meta_platform,meta,DTC_NutriMeow_Conv,60645.51,NutriMeow,%nutrimeow%,100.0,True
+meta_platform,meta,DTC_Sara_Conv_PP_Jun23 Campaign,49535.62,Sara's,%sara%,80.0,True
+meta_platform,meta,DTC_CatTreats_Conv,4443.04,Treats Portfolio,%treat%,200.0,True
+meta_platform,meta,DTC_Winter'25_Conv,552742.29,,,,False
+meta_platform,meta,DTC_Bed&MatOld _Manual,105523.05,,,,False
+meta_platform,meta,DTC_Remarketing_catalog_PV,101037.84,,,,False
+meta_platform,meta,DTC_HUFTAppDL_Offer,84797.2,,,,False
+meta_platform,meta,DTC_CLH_Conv_06Aug,77580.21,,,,False
+meta_platform,meta,DTC_HUFT_OutletSale,70886.54,,,,False
+meta_platform,meta,DTC_HUFTGourmetToys_Conv,62677.97,,,,False

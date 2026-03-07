@@ -431,12 +431,47 @@ def _build_tab2_meta_campaign_drilldown() -> pd.DataFrame:
         ]
         .sum(min_count=1)
     )
-    out["revenue_shopify_attribution"] = pd.NA
+    out["campaign_key"] = out["campaign_name"].apply(_campaign_key)
+
+    ms_path = STAGING_DIR / "meta_shopify_sales_monthly.csv"
+    if ms_path.exists():
+        ms = pd.read_csv(ms_path)
+        key_col = None
+        for candidate in ["Order UTM medium", "Order UTM content", "Order UTM campaign"]:
+            if candidate in ms.columns:
+                key_col = candidate
+                break
+        if key_col is not None and "month_start" in ms.columns:
+            if map_brand is not None:
+                ms["mapped_brand"] = ms[key_col].astype(str).apply(
+                    lambda x: map_brand(x, "meta")
+                )
+                ms = ms[ms["mapped_brand"] == "Sara's"].copy()
+            ms["campaign_key"] = ms[key_col].astype(str).apply(_campaign_key)
+            ms["revenue_shopify_attribution"] = _to_num(ms.get("Total sales", pd.Series(dtype=float)))
+            ms = (
+                ms.groupby(["month_start", "campaign_key"], as_index=False)[
+                    ["revenue_shopify_attribution"]
+                ]
+                .sum(min_count=1)
+            )
+            out = out.merge(ms, on=["month_start", "campaign_key"], how="left")
+        else:
+            out["revenue_shopify_attribution"] = pd.NA
+    else:
+        out["revenue_shopify_attribution"] = pd.NA
+
     out["cpa_platform"] = _safe_div(out["paid_spend"], out["orders_platform"])
     out["roas_paid_attribution"] = _safe_div(out["revenue_paid_attribution"], out["paid_spend"])
-    out["roas_shopify_attribution"] = pd.NA
-    out["revenue_gap_paid_vs_shopify"] = pd.NA
-    out["roas_paid_over_shopify"] = pd.NA
+    out["roas_shopify_attribution"] = _safe_div(out["revenue_shopify_attribution"], out["paid_spend"])
+    out["revenue_gap_paid_vs_shopify"] = (
+        pd.to_numeric(out["revenue_paid_attribution"], errors="coerce")
+        - pd.to_numeric(out["revenue_shopify_attribution"], errors="coerce")
+    )
+    out["roas_paid_over_shopify"] = _safe_div(
+        out["roas_paid_attribution"], out["roas_shopify_attribution"]
+    )
+    out = out.drop(columns=["campaign_key"], errors="ignore")
     out = out[cols].copy()
     out = out[pd.to_numeric(out["paid_spend"], errors="coerce").fillna(0) > 0].copy()
 

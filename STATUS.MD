@@ -1,6 +1,6 @@
 # Dashboard Build Status
 
-Last updated: 2026-03-07 (MCP + Vercel static deployment setup)
+Last updated: 2026-03-07 (Meta-Shopify adset replacements ingested)
 
 ## Git Remote
 - Repository remote: `https://github.com/ashishling/HUFTPerfData.git`
@@ -180,6 +180,13 @@ src/audit_brand_map_v2.py
 - Exported additional Tab 2 files:
   - `tab2_google_campaign_insights.csv`
   - `tab2_meta_campaign_insights.csv`
+- Ingested revised Meta-Shopify monthly files with adset-level identifiers:
+  - `Meta Shopify Report with adset data - Dec_25.csv`
+  - `Meta shopify report with adset data - Jan_26.csv`
+  - `Meta Shopify report with Adset data - feb_26.csv`
+- Updated ETL dedupe preference for `meta_shopify_sales`:
+  - when both legacy and revised files exist for a month, revised `adset data` files are used.
+- Updated Tab 2 Meta campaign drilldown to join Shopify-attributed revenue using adset-compatible key from Meta-Shopify UTM fields (prefers `Order UTM medium`).
 
 ## Current Outputs
 - Staging files: `data/derived/dashboard_v2/staging/`
@@ -197,15 +204,18 @@ src/audit_brand_map_v2.py
   - `one_time_iroas_spend_cut_analysis.csv`
 
 ## Latest Build Run
+- `python3 src/etl_dashboard_v2.py` executed successfully.
 - `python3 src/build_dashboard_marts_v2.py` executed successfully.
 - `python3 src/build_dashboard_v1.py` executed successfully.
+- `python3 src/build_duckdb.py` executed successfully.
 - Current mart row counts:
   - `mart_conversion_channel_monthly.csv`: 26
   - `mart_demand_capture_monthly.csv`: 20
-  - `mart_demand_generation_monthly.csv`: 21
+  - `mart_demand_generation_monthly.csv`: 18
   - `mart_reconciliation_monthly.csv`: 6
   - `mart_exec_summary_monthly.csv`: 3
   - `mart_data_quality_issues.csv`: 3
+- Meta campaign drilldown (`tab2_meta_campaign_insights.csv`) now has Shopify-attributed revenue matched for most rows via revised adset-keyed Meta-Shopify data.
 
 ## Brand Mapping Audit (Dec-Feb)
 - Audit outputs generated in `data/derived/dashboard_v2/audits/`.

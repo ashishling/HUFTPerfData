@@ -331,6 +331,20 @@ def combine_csv_group(
     if include_months_only:
         subset = subset[subset["parsed_month"].isin(TARGET_MONTHS)]
 
+    # Prefer revised Meta-Shopify files that include adset identifiers.
+    # If both legacy and revised files exist for the same month, keep revised only.
+    if source_group == "meta_shopify_sales" and not subset.empty:
+        subset = subset.copy()
+        rel = subset["relative_path"].astype(str).str.lower()
+        subset["is_adset_revised"] = rel.str.contains("adset data", na=False)
+        preferred_months = set(subset.loc[subset["is_adset_revised"], "parsed_month"].astype(str))
+        if preferred_months:
+            subset = subset[
+                subset["parsed_month"].astype(str).isin(preferred_months).eq(False)
+                | subset["is_adset_revised"]
+            ].copy()
+        subset = subset.drop(columns=["is_adset_revised"], errors="ignore")
+
     frames: list[pd.DataFrame] = []
     for _, row in subset.iterrows():
         p = ROOT / row["relative_path"]

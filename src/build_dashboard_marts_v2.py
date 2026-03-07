@@ -62,6 +62,33 @@ def _build_brand_mapper():
     return mapper
 
 
+def _filter_meta_shopify_to_saras(ms: pd.DataFrame, map_brand) -> pd.DataFrame:
+    out = ms.copy()
+    if out.empty:
+        return out
+
+    # New revised files provide adset/campaign identifiers via UTM fields.
+    if map_brand is not None:
+        for col in ["Order UTM content", "Order UTM campaign", "Order UTM medium"]:
+            if col in out.columns:
+                out[f"mapped_brand_{col}"] = out[col].astype(str).apply(
+                    lambda x: map_brand(x, "meta")
+                )
+        mapped_cols = [c for c in out.columns if c.startswith("mapped_brand_")]
+        if mapped_cols:
+            mask = False
+            for c in mapped_cols:
+                mask = mask | (out[c] == "Sara's")
+            out = out[mask].copy()
+
+    # Legacy fallback files are product-level; keep Saras/Wholesome titles.
+    if "Product title at time of sale" in out.columns:
+        t = out["Product title at time of sale"].astype(str).str.lower()
+        out = out[t.str.contains("sara|wholesome", regex=True, na=False)].copy()
+
+    return out
+
+
 def _objective_from_google(campaign_type: str) -> str:
     t = str(campaign_type).lower()
     if any(k in t for k in ["video", "demand gen", "display"]):
@@ -155,10 +182,7 @@ def _build_conversion_channel_monthly() -> pd.DataFrame:
     # Meta Shopify layer (no spend in this source)
     ms = _safe_read(STAGING / "meta_shopify_sales_monthly.csv")
     if not ms.empty:
-        # Meta-Shopify file is Saras-focused, but retain only Saras/Wholesome titles as guardrail.
-        if "Product title at time of sale" in ms.columns:
-            t = ms["Product title at time of sale"].astype(str).str.lower()
-            ms = ms[t.str.contains("sara|wholesome", regex=True, na=False)].copy()
+        ms = _filter_meta_shopify_to_saras(ms, map_brand)
         ms["spend"] = np.nan
         ms["revenue"] = _to_num(ms.get("Total sales", pd.Series(dtype=float)))
         ms["orders"] = _to_num(ms.get("Orders", pd.Series(dtype=float)))
@@ -236,12 +260,6 @@ def _build_conversion_channel_monthly() -> pd.DataFrame:
     out["cpa"] = np.where((out["orders"].notna()) & (out["orders"] > 0) & out["spend"].notna(), out["spend"] / out["orders"], np.nan)
     out["data_confidence"] = "medium"
     out.loc[out["attribution_layer"] == "shopify", "data_confidence"] = "high"
-    jan_meta_shopify_mask = (
-        (out["month_start"] == "2026-01")
-        & (out["channel"] == "meta")
-        & (out["attribution_layer"] == "shopify")
-    )
-    out.loc[jan_meta_shopify_mask, "data_confidence"] = "low"
     # Drop rows that have no signal at all.
     empty_mask = (
         out["spend"].fillna(0).eq(0)
@@ -295,9 +313,7 @@ def _build_demand_generation_monthly(conv: pd.DataFrame) -> pd.DataFrame:
     ms = _safe_read(STAGING / "meta_shopify_sales_monthly.csv")
     if not ms.empty and "New customers" in ms.columns:
         ms = ms.copy()
-        if "Product title at time of sale" in ms.columns:
-            t = ms["Product title at time of sale"].astype(str).str.lower()
-            ms = ms[t.str.contains("sara|wholesome", regex=True, na=False)].copy()
+        ms = _filter_meta_shopify_to_saras(ms, _build_brand_mapper())
         ms["month_start"] = ms.get("month_start", pd.Series(dtype=str)).astype(str)
         ms = ms[ms["month_start"].isin(TARGET_MONTHS)].copy()
         if not ms.empty:

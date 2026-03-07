@@ -6,7 +6,7 @@ month_start,brand,channel,sub_channel,objective_class,attribution_layer,spend,re
 2025-12,saras,google,search,demand_capture,shopify,,170570.25,73.0,,,high,google_shopify_monthly
 2025-12,saras,google,unknown,demand_capture,shopify,,818572.64,355.0,,,high,google_shopify_monthly
 2025-12,saras,meta,d2c,demand_generation,platform,1409651.57,5137099.71,2259.0,3.6442336669053614,624.0157459052679,medium,meta_d2c_adset_monthly
-2025-12,saras,meta,d2c,demand_generation,shopify,,294362.01,489.0,,,high,meta_shopify_sales_monthly
+2025-12,saras,meta,d2c,demand_generation,shopify,,341679.5,383.0,,,high,meta_shopify_sales_monthly
 2026-01,saras,blinkit,cpa,demand_capture,platform,435263.73,724785.0,2517.0,1.665162865741191,172.92957091775924,medium,meta_blinkit_monthly
 2026-01,saras,google,performance max,demand_capture,platform,187023.79,775928.79,334.97,4.148824007897605,558.3299698480461,medium,google_ads_campaigns_monthly
 2026-01,saras,google,search,demand_capture,platform,49273.07,63654.74,36.14,1.2918768812253834,1363.3942999446597,medium,google_ads_campaigns_monthly
@@ -15,7 +15,7 @@ month_start,brand,channel,sub_channel,objective_class,attribution_layer,spend,re
 2026-01,saras,google,unknown,demand_capture,shopify,,618286.97,281.0,,,high,google_shopify_monthly
 2026-01,saras,instamart,cpa,demand_capture,platform,149469.72,189585.0,580.0,1.2683839910852848,257.7064137931034,medium,meta_instamart_monthly
 2026-01,saras,meta,d2c,demand_generation,platform,775995.8400000001,4119368.8000000003,1881.0,5.308493406356405,412.54430622009573,medium,meta_d2c_adset_monthly
-2026-01,saras,meta,d2c,demand_generation,shopify,,195834.63,311.0,,,low,meta_shopify_sales_monthly
+2026-01,saras,meta,d2c,demand_generation,shopify,,203397.01,239.0,,,high,meta_shopify_sales_monthly
 2026-02,saras,blinkit,cpa,demand_capture,platform,308218.79000000004,978803.0,3276.0,3.175675954084434,94.08387973137974,medium,meta_blinkit_monthly
 2026-02,saras,google,performance max,demand_capture,platform,282818.35,686271.5,278.90999999999997,2.426545165828172,1014.0129432433401,medium,google_ads_campaigns_monthly
 2026-02,saras,google,search,demand_capture,platform,72611.06,100809.83,49.68,1.388353647502185,1461.5752818035426,medium,google_ads_campaigns_monthly
@@ -24,4 +24,4 @@ month_start,brand,channel,sub_channel,objective_class,attribution_layer,spend,re
 2026-02,saras,google,unknown,demand_capture,shopify,,521241.02,222.0,,,high,google_shopify_monthly
 2026-02,saras,instamart,cpa,demand_capture,platform,131435.67,206108.0,613.0,1.5681283475026222,214.41381729200654,medium,meta_instamart_monthly
 2026-02,saras,meta,d2c,demand_generation,platform,779293.5700000001,3475003.11,1655.0,4.459170771805546,470.872247734139,medium,meta_d2c_adset_monthly
-2026-02,saras,meta,d2c,demand_generation,shopify,,235316.17,432.0,,,high,meta_shopify_sales_monthly
+2026-02,saras,meta,d2c,demand_generation,shopify,,251107.19999999998,327.0,,,high,meta_shopify_sales_monthly

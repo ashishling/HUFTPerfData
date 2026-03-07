@@ -1,12 +1,52 @@
 # Dashboard Build Status
 
-Last updated: 2026-03-06 (post dashboard enhancements)
+Last updated: 2026-03-07 (MCP + Vercel static deployment setup)
 
 ## Git Remote
 - Repository remote: `https://github.com/ashishling/HUFTPerfData.git`
 - Notes:
   - Local workspace was initialized as a git repository and linked to this remote.
   - Push target is this remote for ongoing HUFT mart + MCP updates.
+
+## Access Paths (How It Works)
+- Dashboard path (for business users):
+  - `dashboard_data/` + ETL -> `data/derived/dashboard_v2/staging/*.csv`
+  - staging -> curated marts via `src/build_dashboard_marts_v2.py`
+  - marts -> static dashboard package via `src/build_dashboard_v1.py`
+  - final files served from `data/derived/dashboard_v2/dashboard_v1/` (`dashboard_v1.html` + tab CSVs)
+- LLM query path (for Claude/MCP):
+  - `src/build_duckdb.py` builds/refreshes `data/derived/analytics.duckdb`
+  - DuckDB includes:
+    - Jan raw tables (`google_campaigns`, `meta_campaigns`, `shopify_*`)
+    - Dashboard monthly tables (`mart_*_monthly`, `*_campaigns_monthly`)
+    - Monthly views (`monthly_channel_spend`, `monthly_paid_spend_meta_google`)
+  - `src/mcp_duckdb_server.py` exposes MCP tools:
+    - `list_datasets`, `describe_dataset`, `sample_dataset`, `query_readonly`, `ask_mart`
+  - `ask_mart` performs deterministic intent routing (not free-form LLM SQL in-server) and returns generated SQL + results.
+
+## Month Coverage in MCP
+- `ask_mart` month parsing currently supports:
+  - `2025-12` (Dec 2025)
+  - `2026-01` (Jan 2026)
+  - `2026-02` (Feb 2026)
+- Month-level totals for Meta/Google/Combined use `monthly_paid_spend_meta_google`.
+- Month-filtered top campaigns use:
+  - `google_campaigns_monthly`
+  - `meta_campaigns_monthly`
+- Month-filtered brand spend is not yet implemented in current brand views.
+
+## Deployment (GitHub + Vercel)
+- GitHub Actions:
+  - Workflow: `.github/workflows/rebuild-dashboard.yml`
+  - Trigger: push to `main` (and manual dispatch)
+  - Action: rebuild ETL/marts/dashboard/DuckDB and commit regenerated artifacts back to repo.
+- Vercel static hosting:
+  - Config file: `vercel.json`
+  - Output directory: `data/derived/dashboard_v2/dashboard_v1`
+  - Entry file: `index.html` redirecting to `dashboard_v1.html`
+- Expected deploy behavior:
+  - First deploy may trigger from user commit.
+  - After GitHub Action regenerates artifacts and pushes bot commit, Vercel deploys latest bot commit with refreshed dashboard files.
 
 ## How To Refresh
 Use this when new source files are added/updated in `dashboard_data/`.

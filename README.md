@@ -49,6 +49,29 @@ SELECT * FROM spend_by_brand;
 - CSVs are Jan 1–31, 2026 aggregates (no daily granularity).
 - PDFs contain creative/performance summaries (Jan 1–27, 2026).
 
+## Vercel (Static Dashboard)
+Static hosting is configured via `vercel.json` with output directory:
+- `data/derived/dashboard_v2/dashboard_v1`
+
+This folder includes:
+- `index.html` (redirects to `dashboard_v1.html`)
+- `dashboard_v1.html`
+- tab-level CSV exports
+
+Deploy steps:
+1. Push current branch to GitHub.
+2. In Vercel, import this repo.
+3. Keep defaults (framework `Other`, no server runtime needed).
+4. Deploy.
+
+Optional before deploy (if you refreshed source data):
+```bash
+python3 src/etl_dashboard_v2.py
+python3 src/build_dashboard_marts_v2.py
+python3 src/build_dashboard_v1.py
+python3 src/build_duckdb.py
+```
+
 ## MCP Access (Claude Desktop)
 - MCP server script: `src/mcp_duckdb_server.py`
 - Database: `data/derived/analytics.duckdb` (opened read-only by the MCP server)

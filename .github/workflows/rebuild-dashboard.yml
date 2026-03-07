@@ -1,0 +1,52 @@
+name: Rebuild Dashboard Artifacts
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy duckdb openpyxl
+
+      - name: Rebuild dashboard pipeline
+        run: |
+          python src/etl_dashboard_v2.py
+          python src/build_dashboard_marts_v2.py
+          python src/build_dashboard_v1.py
+          python src/build_duckdb.py
+
+      - name: Commit regenerated artifacts
+        run: |
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/derived src/build_duckdb.py src/mcp_duckdb_server.py README.md STATUS.MD vercel.json || true
+          git add -A
+          git commit -m "chore(auto): rebuild dashboard artifacts [skip ci]"
+          git push

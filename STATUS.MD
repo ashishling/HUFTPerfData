@@ -184,6 +184,11 @@ src/audit_brand_map_v2.py
   - `Meta Shopify Report with adset data - Dec_25.csv`
   - `Meta shopify report with adset data - Jan_26.csv`
   - `Meta Shopify report with Adset data - feb_26.csv`
+- Archived replaced legacy files to avoid accidental re-use:
+  - moved to `data/archive/meta_shopify_legacy/`:
+    - `SWF-ShopifyDashboardXMeta_Dec_25.csv`
+    - `SWF-ShopifyDashboardXMeta-Jan_26.csv`
+    - `SWF-ShopifyDashboardXMeta_Feb_26.csv`
 - Updated ETL dedupe preference for `meta_shopify_sales`:
   - when both legacy and revised files exist for a month, revised `adset data` files are used.
 - Updated Tab 2 Meta campaign drilldown to join Shopify-attributed revenue using adset-compatible key from Meta-Shopify UTM fields (prefers `Order UTM medium`).

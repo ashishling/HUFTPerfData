@@ -1,6 +1,6 @@
 # Dashboard Build Status
 
-Last updated: 2026-03-07 (Meta-Shopify adset replacements ingested)
+Last updated: 2026-03-09 (management report PDF generator added)
 
 ## Git Remote
 - Repository remote: `https://github.com/ashishling/HUFTPerfData.git`
@@ -192,6 +192,16 @@ src/audit_brand_map_v2.py
 - Updated ETL dedupe preference for `meta_shopify_sales`:
   - when both legacy and revised files exist for a month, revised `adset data` files are used.
 - Updated Tab 2 Meta campaign drilldown to join Shopify-attributed revenue using adset-compatible key from Meta-Shopify UTM fields (prefers `Order UTM medium`).
+- Added management report generator script:
+  - `src/generate_management_report_pdf.py`
+  - builds a structured Dec-Feb performance report with:
+    - budget allocation (capture vs generation)
+    - demand capture findings + recommendations
+    - demand generation findings + recommendations
+    - directional incremental ROAS observations
+- Added report artifacts:
+  - `output/pdf/performance_marketing_report_dec2025_feb2026.pdf`
+  - `data/derived/reports/performance_marketing_report_dec2025_feb2026.md`
 
 ## Current Outputs
 - Staging files: `data/derived/dashboard_v2/staging/`

@@ -1,0 +1,190 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [ 4 0 R 6 0 R ] /Count 2 >>
+endobj
+3 0 obj
+<< /Length 2876 >>
+stream
+BT
+/F1 10 Tf
+14 TL
+50 800 Td
+(PERFORMANCE MARKETING REPORT \(DEC 2025 TO FEB 2026\)) Tj
+T*
+() Tj
+T*
+(EXECUTIVE SUMMARY) Tj
+T*
+(- Total paid spend: Rs 5,219,546) Tj
+T*
+(- Budget split: Demand Capture 43.2% | Demand Generation 56.8%) Tj
+T*
+(- Demand Capture weighted ROAS \(platform\): 2.47x) Tj
+T*
+(- Demand Generation weighted ROAS \(platform\): 4.29x) Tj
+T*
+() Tj
+T*
+(1\) BUDGET ALLOCATION BETWEEN DEMAND CAPTURE AND DEMAND GENERATION) Tj
+T*
+(month_start  demand_capture  demand_generation  capture_share  generation_share) Tj
+T*
+(   Dec 2025       638490.46         1409651.57      31.174130         68.825870) Tj
+T*
+(   Jan 2026       821030.31          775995.84      51.409948         48.590052) Tj
+T*
+(   Feb 2026       795083.87          779293.57      50.501478         49.498522) Tj
+T*
+() Tj
+T*
+(Interpretation:) Tj
+T*
+(- Mix moved from generation-heavy in Dec to near 50:50 in Jan-Feb.) Tj
+T*
+(- This indicates active reallocation toward capture over the quarter.) Tj
+T*
+() Tj
+T*
+(2\) WITHIN DEMAND CAPTURE - FINDINGS AND RECOMMENDATIONS) Tj
+T*
+(  channel      spend    revenue  orders     roas        cpa  spend_share) Tj
+T*
+(   google 1000224.90 2775421.81 1200.82 2.774798 832.951566    44.363649) Tj
+T*
+(  blinkit  973474.35 2386704.00 7826.00 2.451738 124.389771    43.177164) Tj
+T*
+(instamart  280905.39  395693.00 1193.00 1.408634 235.461350    12.459186) Tj
+T*
+() Tj
+T*
+(Findings:) Tj
+T*
+(- Capture spend concentrated in Google and Blinkit.) Tj
+T*
+(- Instamart is smaller and lower-ROAS versus Google/Blinkit in current window.) Tj
+T*
+(- Jan to Feb: total capture spend reduced while total capture revenue increased \(efficiency improvement) Tj
+T*
+(signal\).) Tj
+T*
+() Tj
+T*
+(Recommendations:) Tj
+T*
+(- Keep capture near 50% of budget until weekly efficiency is stable.) Tj
+T*
+(- Tighten Google search and PMax segmentation before scale.) Tj
+T*
+(- Maintain CPA guardrails on Blinkit/Instamart and shift budget weekly toward best 2-week cohorts.) Tj
+T*
+() Tj
+T*
+(3\) WITHIN DEMAND GENERATION - FINDINGS AND RECOMMENDATIONS) Tj
+T*
+(month_start      spend    revenue  orders     roas) Tj
+T*
+(    2025-12 1409651.57 5137099.71  2259.0 3.644234) Tj
+T*
+(    2026-01  775995.84 4119368.80  1881.0 5.308493) Tj
+T*
+(    2026-02  779293.57 3475003.11  1655.0 4.459171) Tj
+T*
+() Tj
+T*
+(Meta demand-generation ROAS trend: Dec 2025 3.64x, Jan 2026 5.31x, Feb 2026 4.46x) Tj
+T*
+() Tj
+T*
+(Demand-generation signal metrics:) Tj
+T*
+(   month  meta_impressions  meta_reach meta_new_customers  d2c_new_customers  branded_search_volume) Tj
+T*
+(Dec 2025        16193131.0   6339382.0               None             7735.0                 3250.0) Tj
+T*
+(Jan 2026        11100465.0   4023140.0               None             6165.0                 3230.0) Tj
+T*
+(Feb 2026        11946131.0   3865727.0               None             4442.0                    0.0) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+5 0 obj
+<< /Length 1268 >>
+stream
+BT
+/F1 10 Tf
+14 TL
+50 800 Td
+(Findings:) Tj
+T*
+(- Meta remains primary generation engine; ROAS is strong but has cooled from Jan to Feb.) Tj
+T*
+(- Reach and D2C new-customer trend softened into Feb.) Tj
+T*
+(- Branded search has a missing Feb value in current source and should be backfilled before final) Tj
+T*
+(inference.) Tj
+T*
+() Tj
+T*
+(Recommendations:) Tj
+T*
+(- Refresh creative every 2-3 weeks and preserve an 80:20 proven:test split.) Tj
+T*
+(- Add a monthly incrementality test design \(geo/cohort holdout\).) Tj
+T*
+(- Monitor new-customer and branded-search trend as joint health indicators.) Tj
+T*
+() Tj
+T*
+(INCREMENTAL ROAS OBSERVATIONS \(DIRECTIONAL\)) Tj
+T*
+(  objective_class               period  delta_spend  delta_revenue  iroas_proxy) Tj
+T*
+(   demand_capture Dec 2025 -> Jan 2026    182539.85      -77919.42    -0.426863) Tj
+T*
+(   demand_capture Jan 2026 -> Feb 2026    -25946.44      218038.80          NaN) Tj
+T*
+(demand_generation Dec 2025 -> Jan 2026   -633655.73    -1017730.91     1.606126) Tj
+T*
+(demand_generation Jan 2026 -> Feb 2026      3297.73     -644365.69          NaN) Tj
+T*
+() Tj
+T*
+(Note: iROAS proxy is Delta Revenue / Delta Spend across adjacent months. Treat as directional \(short) Tj
+T*
+(window, attribution noise\).) Tj
+T*
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000085 00000 n 
+0000000150 00000 n 
+0000003078 00000 n 
+0000003204 00000 n 
+0000004524 00000 n 
+0000004650 00000 n 
+trailer
+<< /Size 8 /Root 7 0 R >>
+startxref
+4699
+%%EOF
